@@ -10,7 +10,7 @@ format:
 self-contained: true
 ---
 
-##  Setting the working space
+## Setting the working space
 
 ```{r}
 

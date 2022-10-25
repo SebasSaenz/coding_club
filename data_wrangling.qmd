@@ -33,6 +33,8 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
 
 ## Clean taxonomy file
 
+We need to
+
 ```{r}
 #| warning: false
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>% 

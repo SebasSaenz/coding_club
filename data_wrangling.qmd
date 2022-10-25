@@ -2,7 +2,7 @@
 title: "Data wrangling from amplicon sequencing"
 author: "Johan S. Sáenz"
 format:
-  html:
+  gfm:
     toc: true
     html-math-method: katex
     css: styles.css

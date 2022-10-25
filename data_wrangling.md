@@ -1,18 +1,15 @@
----
-title: "Data wrangling from amplicon sequencing"
-author: "Johan S. Sáenz"
-format:
-  gfm:
-    toc: true
-    html-math-method: katex
-    css: styles.css
-    code-fold: show
----
+Data wrangling from amplicon sequencing
+================
+Johan S. Sáenz
+
+- <a href="#setting-the-working-space"
+  id="toc-setting-the-working-space">Setting the working space</a>
+- <a href="#clean-taxonomy-file" id="toc-clean-taxonomy-file">Clean
+  taxonomy file</a>
 
 ## Setting the working space
 
-```{r}
-
+``` r
 setwd("~/Documents/github/coding_club/")
 
 pacman::p_load(tidyverse,
@@ -22,9 +19,7 @@ pacman::p_load(tidyverse,
 
 You can add options to executable code like this
 
-```{r}
-#| warning: false
-
+``` r
 counts <- read_tsv("raw_data/feature-table_ampli.tsv")
 
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
@@ -34,8 +29,7 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
 
 We need to
 
-```{r}
-#| warning: false
+``` r
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>% 
   rename(OTUID='Feature ID') %>%
   separate(Taxon,
@@ -45,7 +39,18 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>%
 head(taxonomy)
 ```
 
-```{r}
+    # A tibble: 6 × 9
+      OTUID                  super…¹ phylum class order family genus species Confi…²
+      <chr>                  <chr>   <chr>  <chr> <chr> <chr>  <chr> <chr>     <dbl>
+    1 b7baa37944fb48185b3cc… d__Bac… " p__… " c_… " o_… " f__… " g_… " s__W…   1.00 
+    2 a82a5a7c35c28c40ed5a3… d__Bac… " p__… " c_… " o_… " f__… " g_… " s__L…   0.956
+    3 1bfdaa567ac92f2e89705… d__Bac… " p__… " c_… " o_… " f__… " g_…  <NA>     0.999
+    4 e28bc9caeabd276628e70… d__Bac… " p__… " c_… " o_… " f__… " g_…  <NA>     0.997
+    5 97b761526814e975f8e72… d__Bac… " p__… " c_… " o_… " f__… " g_… " s__W…   0.943
+    6 ae218b0c831c009018603… d__Bac… " p__… " c_… " o_… " f__… " g_… " s__L…   0.957
+    # … with abbreviated variable names ¹​superkingdom, ²​Confidence
+
+``` r
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
 
@@ -99,3 +104,5 @@ inner_join(taxon_pool, mean_rel, by="genus") %>%
         axis.text = element_text(size = 14),
         axis.title = element_text(size = 15))
 ```
+
+![](data_wrangling_files/figure-gfm/unnamed-chunk-4-1.png)

@@ -64,12 +64,12 @@ head(mean_rel)
 
 mean_rel <- mean_rel %>% 
   inner_join(taxonomy, by="OTUID") %>% 
-  group_by(sample, Day, genus) %>% 
+  group_by(sample, Day, phylum) %>% 
   summarise(counts=sum(counts),
             .groups = "drop") %>% 
   group_by(sample) %>% 
   mutate(rel_abund = 100*(counts/sum(counts))) %>% 
-  group_by(Day, genus) %>%
+  group_by(Day, phylum) %>%
   summarise(mean_rel =mean(rel_abund),
             .groups = "drop")
 ```
@@ -78,7 +78,7 @@ mean_rel <- mean_rel %>%
 #| warning: false
 
 taxon_pool <- mean_rel %>%
-  group_by(genus) %>%
+  group_by(phylum) %>%
   summarise(pool = max(mean_rel) < 5,
             mean=mean(mean_rel),
             .groups = "drop")  
@@ -87,16 +87,14 @@ head(taxon_pool)
 ```
 
 ```{r}
-pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="genus") %>%
-  mutate(genus=if_else(pool, "Other", genus)) %>%
-  group_by(Day, genus) %>%
+pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
+  mutate(phylum=if_else(pool, "Other", phylum)) %>%
+  group_by(Day, phylum) %>%
   summarise(mean_rel=sum(mean_rel),
             mean =sum(mean),
             .groups ="drop") %>%
-  mutate(genus=str_replace(genus,
-                           "_sensu_stricto_12", ""),
-         genus=factor(genus),
-         genus=fct_reorder(genus, mean,
+  mutate(genus=factor(phylum),
+         genus=fct_reorder(phylum, mean,
                            .desc = TRUE))
 ```
 
@@ -111,7 +109,7 @@ bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
     ggplot(aes(x=factor(Day,
                       levels = c(0,2,4,8,15,40)),
              y=mean_rel,
-             fill=genus)) +
+             fill=phylum)) +
   geom_col() +
   scale_y_continuous(expand = c(0,0)) +
   scale_fill_manual(values=bar_colors) + 

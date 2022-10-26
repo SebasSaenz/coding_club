@@ -23,6 +23,8 @@ You can add options to executable code like this
 counts <- read_tsv("raw_data/feature-table_ampli.tsv")
 
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
+
+metadata <-  read_tsv("raw_data/weight_ph_data.txt")
 ```
 
 ## Clean taxonomy file
@@ -51,33 +53,63 @@ head(taxonomy)
     # … with abbreviated variable names ¹​superkingdom, ²​Confidence
 
 ``` r
-bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-                '#b3de69','#fccde5','#d9d9d9','#bc80bd')
-
 mean_rel <- counts %>% 
   pivot_longer(-OTUID,
                names_to = "sample",
-               values_to = "counts") %>% 
-  mutate(day=str_replace_all(sample, "[ABCT]", "")) %>% 
+               values_to = "counts") %>%
+  inner_join(metadata, by=c("sample"="Sample")) %>% 
+  select(OTUID, sample, counts, Day)
+
+head(mean_rel)
+```
+
+    # A tibble: 6 × 4
+      OTUID                            sample counts   Day
+      <chr>                            <chr>   <dbl> <dbl>
+    1 b7baa37944fb48185b3ccd35739564a1 C15A     7068    15
+    2 b7baa37944fb48185b3ccd35739564a1 C15B     6498    15
+    3 b7baa37944fb48185b3ccd35739564a1 C15C     7198    15
+    4 b7baa37944fb48185b3ccd35739564a1 C2A      8357     2
+    5 b7baa37944fb48185b3ccd35739564a1 C2B      7573     2
+    6 b7baa37944fb48185b3ccd35739564a1 C2C      7124     2
+
+``` r
+mean_rel <- mean_rel %>% 
   inner_join(taxonomy, by="OTUID") %>% 
-  group_by(sample, day, genus) %>% 
+  group_by(sample, Day, genus) %>% 
   summarise(counts=sum(counts),
             .groups = "drop") %>% 
   group_by(sample) %>% 
   mutate(rel_abund = 100*(counts/sum(counts))) %>% 
-  group_by(day, genus) %>%
+  group_by(Day, genus) %>%
   summarise(mean_rel =mean(rel_abund),
             .groups = "drop")
+```
 
+``` r
 taxon_pool <- mean_rel %>%
   group_by(genus) %>%
   summarise(pool = max(mean_rel) < 5,
             mean=mean(mean_rel),
             .groups = "drop")  
 
-inner_join(taxon_pool, mean_rel, by="genus") %>%
+head(taxon_pool)
+```
+
+    # A tibble: 6 × 3
+      genus                                                    pool     mean
+      <chr>                                                    <lgl>   <dbl>
+    1 " g__Acidovorax"                                         TRUE  0.0652 
+    2 " g__Acinetobacter"                                      TRUE  0.871  
+    3 " g__Aerococcus"                                         TRUE  0.0906 
+    4 " g__Agrococcus"                                         TRUE  0.00940
+    5 " g__Allorhizobium-Neorhizobium-Pararhizobium-Rhizobium" TRUE  1.17   
+    6 " g__Aquabacterium"                                      TRUE  0.0226 
+
+``` r
+pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="genus") %>%
   mutate(genus=if_else(pool, "Other", genus)) %>%
-  group_by(day, genus) %>%
+  group_by(Day, genus) %>%
   summarise(mean_rel=sum(mean_rel),
             mean =sum(mean),
             .groups ="drop") %>%
@@ -85,11 +117,17 @@ inner_join(taxon_pool, mean_rel, by="genus") %>%
                            "_sensu_stricto_12", ""),
          genus=factor(genus),
          genus=fct_reorder(genus, mean,
-                           .desc = TRUE)) %>%
-  #filter(grepl('Lactococcus', taxon)) %>%
-  #filter(taxon!="Other",
-  #taxon!="Unclassified") %>%
-  ggplot(aes(x=factor(day,
+                           .desc = TRUE))
+```
+
+``` r
+bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
+                '#b3de69','#fccde5','#d9d9d9','#bc80bd')
+```
+
+``` r
+  pool_mean_rel %>% 
+    ggplot(aes(x=factor(Day,
                       levels = c(0,2,4,8,15,40)),
              y=mean_rel,
              fill=genus)) +
@@ -105,4 +143,4 @@ inner_join(taxon_pool, mean_rel, by="genus") %>%
         axis.title = element_text(size = 15))
 ```
 
-![](data_wrangling_files/figure-gfm/unnamed-chunk-4-1.png)
+![](data_wrangling_files/figure-gfm/unnamed-chunk-9-1.png)

@@ -76,19 +76,19 @@ head(mean_rel)
 ``` r
 mean_rel <- mean_rel %>% 
   inner_join(taxonomy, by="OTUID") %>% 
-  group_by(sample, Day, genus) %>% 
+  group_by(sample, Day, phylum) %>% 
   summarise(counts=sum(counts),
             .groups = "drop") %>% 
   group_by(sample) %>% 
   mutate(rel_abund = 100*(counts/sum(counts))) %>% 
-  group_by(Day, genus) %>%
+  group_by(Day, phylum) %>%
   summarise(mean_rel =mean(rel_abund),
             .groups = "drop")
 ```
 
 ``` r
 taxon_pool <- mean_rel %>%
-  group_by(genus) %>%
+  group_by(phylum) %>%
   summarise(pool = max(mean_rel) < 5,
             mean=mean(mean_rel),
             .groups = "drop")  
@@ -97,28 +97,29 @@ head(taxon_pool)
 ```
 
     # A tibble: 6 × 3
-      genus                                                    pool     mean
-      <chr>                                                    <lgl>   <dbl>
-    1 " g__Acidovorax"                                         TRUE  0.0652 
-    2 " g__Acinetobacter"                                      TRUE  0.871  
-    3 " g__Aerococcus"                                         TRUE  0.0906 
-    4 " g__Agrococcus"                                         TRUE  0.00940
-    5 " g__Allorhizobium-Neorhizobium-Pararhizobium-Rhizobium" TRUE  1.17   
-    6 " g__Aquabacterium"                                      TRUE  0.0226 
+      phylum                 pool     mean
+      <chr>                  <lgl>   <dbl>
+    1 " p__Actinobacteriota" FALSE  2.80  
+    2 " p__Bacteroidota"     TRUE   0.867 
+    3 " p__Cyanobacteria"    TRUE   0.0286
+    4 " p__Firmicutes"       FALSE 66.3   
+    5 " p__Proteobacteria"   FALSE 30.0   
+    6  <NA>                  TRUE   0.0222
 
 ``` r
-pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="genus") %>%
-  mutate(genus=if_else(pool, "Other", genus)) %>%
-  group_by(Day, genus) %>%
+pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
+  mutate(phylum=if_else(pool, "Other", phylum)) %>%
+  group_by(Day, phylum) %>%
   summarise(mean_rel=sum(mean_rel),
             mean =sum(mean),
             .groups ="drop") %>%
-  mutate(genus=str_replace(genus,
-                           "_sensu_stricto_12", ""),
-         genus=factor(genus),
-         genus=fct_reorder(genus, mean,
+  mutate(genus=factor(phylum),
+         genus=fct_reorder(phylum, mean,
                            .desc = TRUE))
 ```
+
+[Color
+Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
 
 ``` r
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
@@ -130,7 +131,7 @@ bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
     ggplot(aes(x=factor(Day,
                       levels = c(0,2,4,8,15,40)),
              y=mean_rel,
-             fill=genus)) +
+             fill=phylum)) +
   geom_col() +
   scale_y_continuous(expand = c(0,0)) +
   scale_fill_manual(values=bar_colors) + 

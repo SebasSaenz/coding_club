@@ -47,6 +47,8 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>%
 head(taxonomy)
 ```
 
+## Pivot the data and add metadata
+
 ```{r}
 #| warning: false
 mean_rel <- counts %>% 
@@ -58,6 +60,8 @@ mean_rel <- counts %>%
 
 head(mean_rel)
 ```
+
+## Taxonomy and relative abundance
 
 ```{r}
 #| warning: false
@@ -74,6 +78,8 @@ mean_rel <- mean_rel %>%
             .groups = "drop")
 ```
 
+## Taxon pooling
+
 ```{r}
 #| warning: false
 
@@ -85,6 +91,8 @@ taxon_pool <- mean_rel %>%
 
 head(taxon_pool)
 ```
+
+## Organized taxon by abundance
 
 ```{r}
 pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
@@ -98,12 +106,16 @@ pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
                            .desc = TRUE))
 ```
 
+## Select colors for barplot
+
 [Color Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
 
 ```{r}
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
 ```
+
+## Barplot 
 
 ```{r}
 

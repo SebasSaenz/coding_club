@@ -6,6 +6,18 @@ Johan S. Sáenz
   id="toc-setting-the-working-space">Setting the working space</a>
 - <a href="#clean-taxonomy-file" id="toc-clean-taxonomy-file">Clean
   taxonomy file</a>
+- <a href="#pivot-the-data-and-add-metadata"
+  id="toc-pivot-the-data-and-add-metadata">Pivot the data and add
+  metadata</a>
+- <a href="#taxonomy-and-relative-abundance"
+  id="toc-taxonomy-and-relative-abundance">Taxonomy and relative
+  abundance</a>
+- <a href="#taxon-pooling" id="toc-taxon-pooling">Taxon pooling</a>
+- <a href="#organized-taxon-by-abundance"
+  id="toc-organized-taxon-by-abundance">Organized taxon by abundance</a>
+- <a href="#select-colors-for-barplot"
+  id="toc-select-colors-for-barplot">Select colors for barplot</a>
+- <a href="#barplot" id="toc-barplot">Barplot</a>
 
 ## Setting the working space
 
@@ -52,6 +64,8 @@ head(taxonomy)
     6 ae218b0c831c009018603… d__Bac… " p__… " c_… " o_… " f__… " g_… " s__L…   0.957
     # … with abbreviated variable names ¹​superkingdom, ²​Confidence
 
+## Pivot the data and add metadata
+
 ``` r
 mean_rel <- counts %>% 
   pivot_longer(-OTUID,
@@ -73,6 +87,8 @@ head(mean_rel)
     5 b7baa37944fb48185b3ccd35739564a1 C2B      7573     2
     6 b7baa37944fb48185b3ccd35739564a1 C2C      7124     2
 
+## Taxonomy and relative abundance
+
 ``` r
 mean_rel <- mean_rel %>% 
   inner_join(taxonomy, by="OTUID") %>% 
@@ -85,6 +101,8 @@ mean_rel <- mean_rel %>%
   summarise(mean_rel =mean(rel_abund),
             .groups = "drop")
 ```
+
+## Taxon pooling
 
 ``` r
 taxon_pool <- mean_rel %>%
@@ -106,6 +124,8 @@ head(taxon_pool)
     5 " p__Proteobacteria"   FALSE 30.0   
     6  <NA>                  TRUE   0.0222
 
+## Organized taxon by abundance
+
 ``` r
 pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
   mutate(phylum=if_else(pool, "Other", phylum)) %>%
@@ -118,6 +138,8 @@ pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
                            .desc = TRUE))
 ```
 
+## Select colors for barplot
+
 [Color
 Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
 
@@ -125,6 +147,8 @@ Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
 ```
+
+## Barplot
 
 ``` r
   pool_mean_rel %>% 

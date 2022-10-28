@@ -22,6 +22,13 @@ Johan S. Sáenz
 This tutorial would guide you across the data analysis of amplicon
 sequences obtained from grass ensilaging during 40 days.
 
+<figure>
+<img src="data_wrangling_files/IMG_6246.png" data-fig-align="center"
+width="187" alt="Grass ensilagin in glass jars durion 40 days" />
+<figcaption aria-hidden="true">Grass ensilagin in glass jars durion 40
+days</figcaption>
+</figure>
+
 ## Setting the working space
 
 First, we need to organize and set up our working environment. You need

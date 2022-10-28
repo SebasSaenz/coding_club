@@ -11,6 +11,8 @@ format:
 
 This tutorial would guide you across the data analysis of amplicon sequences obtained from grass ensilaging during 40 days.
 
+![Grass ensilagin in glass jars durion 40 days](data_wrangling_files/IMG_6246.png){fig-align="center" width="187"}
+
 ## Setting the working space
 
 First, we need to organize and set up our working environment. You need to create a **project** folder an inside that, you should create **code**, **rawdata** and **figures** folder. Move all the data to the **rawdata** folder.

@@ -36,12 +36,12 @@ to create a **project** folder an inside that, you should create
 **code**, **rawdata** and **figures** folder. Move all the data to the
 **rawdata** folder.
 
-Use the function ´setwd()´ to select the current working directory of
+Use the function `setwd()` to select the current working directory of
 the **R** processes.
 
-Use ´install.packages()´ to install necessary libraries and ´library()´
+Use `install.packages()` to install necessary libraries and `library()`
 to load the package. You need to install the packages once in your
-installation life time but ´library()´ must be run every new session.
+installation life time but `library()` must be run every new session.
 
 ``` r
 #setting working direectory
@@ -60,10 +60,14 @@ library(tidyverse)
     ✖ dplyr::filter() masks stats::filter()
     ✖ dplyr::lag()    masks stats::lag()
 
-You can add options to executable code like this
+Next, use the functions `read.table()` or `read_tsv()` to load the data
+frames located in the **rawdata** folder. This new object should be
+visible in your environment.
 
 ``` r
-counts <- read_tsv("raw_data/feature-table_ampli.tsv")
+counts <- read.table("raw_data/feature-table_ampli.tsv",
+                     header = TRUE, #it recognize first row as header
+                     sep = "\t") #how is the file separated (e.g ",", ";")
 
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
 
@@ -110,7 +114,7 @@ head(mean_rel)
 
     # A tibble: 6 × 4
       OTUID                            sample counts   Day
-      <chr>                            <chr>   <dbl> <dbl>
+      <chr>                            <chr>   <int> <dbl>
     1 b7baa37944fb48185b3ccd35739564a1 C15A     7068    15
     2 b7baa37944fb48185b3ccd35739564a1 C15B     6498    15
     3 b7baa37944fb48185b3ccd35739564a1 C15C     7198    15

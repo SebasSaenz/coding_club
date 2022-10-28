@@ -9,15 +9,18 @@ format:
     code-fold: show
 ---
 
+This tutorial would guide you across the data analysis of amplicon sequences obtained from grass ensilaging during 40 days.
+
 ## Setting the working space
 
-```{r}
+First, we need to organize and set up our working environment. You need to create a project folder an inside that, you should create 'code' ,' rawdata' and 'figures' folder.
 
+```{r}
+#setting working direectory
 setwd("~/Documents/github/coding_club/")
 
-pacman::p_load(tidyverse,
-               patchwork, 
-               ggtext)
+#install.packages("tidyverse")
+library(tidyverse)
 ```
 
 You can add options to executable code like this
@@ -115,7 +118,7 @@ bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
 ```
 
-## Barplot 
+## Barplot
 
 ```{r}
 

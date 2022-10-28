@@ -19,15 +19,31 @@ Johan S. Sáenz
   id="toc-select-colors-for-barplot">Select colors for barplot</a>
 - <a href="#barplot" id="toc-barplot">Barplot</a>
 
+This tutorial would guide you across the data analysis of amplicon
+sequences obtained from grass ensilaging during 40 days.
+
 ## Setting the working space
 
+First, we need to organize and set up our working environment. You need
+to create a project folder an inside that, you should create ‘code’ ,’
+rawdata’ and ‘figures’ folder.
+
 ``` r
+#setting working direectory
 setwd("~/Documents/github/coding_club/")
 
-pacman::p_load(tidyverse,
-               patchwork, 
-               ggtext)
+#install.packages("tidyverse")
+library(tidyverse)
 ```
+
+    ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+    ✔ ggplot2 3.3.6      ✔ purrr   0.3.4 
+    ✔ tibble  3.1.8      ✔ dplyr   1.0.10
+    ✔ tidyr   1.2.1      ✔ stringr 1.4.1 
+    ✔ readr   2.1.2      ✔ forcats 0.5.2 
+    ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ✖ dplyr::filter() masks stats::filter()
+    ✖ dplyr::lag()    masks stats::lag()
 
 You can add options to executable code like this
 

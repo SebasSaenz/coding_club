@@ -11,8 +11,8 @@ Johan S. Sáenz
   add taxonomy information</a>
 - <a href="#create-a-bar-plot" id="toc-create-a-bar-plot">Create a bar
   plot</a>
-- <a href="#select-colors-for-barplot"
-  id="toc-select-colors-for-barplot">Select colors for barplot</a>
+- <a href="#select-colors-for-bar-plot"
+  id="toc-select-colors-for-bar-plot">Select colors for bar plot</a>
 
 This tutorial would guide you across the data analysis of amplicon
 sequences obtained from grass ensilaging during 40 days.
@@ -78,7 +78,7 @@ The taxonomy file has several problems:
 
 2.  The taxon variable contain all the taxonomic levels in one string.
     We can separate it using `separate().`The option `sep=""` can be
-    used to separate the string by diferent characters. In this case we
+    used to separate the string by different characters. In this case we
     use the **;** character.
 
 3.  We want to have a clean and simple data frame. Because of that we
@@ -95,7 +95,7 @@ The taxonomy file has several problems:
 
 > **Note**
 >
-> Try to replace p\_\_ by other string. For example Phylum:
+> Try to replace “p\_\_” by other string. For example “Phylum:”
 
 </div>
 
@@ -108,7 +108,7 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>%
   select(OTUID, phylum) %>% 
   mutate(phylum=str_replace(phylum, " p__", ""))
 
-head(taxonomy) #chec the first 5 row of the dataframe
+head(taxonomy) #check the first 5 row of the dataframe
 ```
 
     # A tibble: 6 × 2
@@ -127,37 +127,102 @@ In this example, you should obtained a data frame with the dimension
 
 ## Pivot the data and add taxonomy information
 
+R works better with long data frames. Because of that we can transform
+our data frame using `pivot_longer()`. With this function all the names
+from the columns are re organize in a new variable as well as their
+values per row (`names_to` and `values_to`). When you pivot a data
+frame, at least one variable should not be pivot. In this cases we use
+**-OTUID** to indicate the column.
+
+The **counts** data frame and **taxonomy** share a common variable
+(**OTUID**). We can use that variable to merge the data using
+`inner_join()`. `inner_join()` would keep all rows that are share by
+both data frames.
+
+<div>
+
+> **Note**
+>
+> Check the function `left_join()`, `right_join()`, `full_join()` and
+> `pivot_wider()`. Do you get a different result joining the data?.
+
+</div>
+
 ``` r
 counts %>% 
   pivot_longer(-OTUID,
                names_to = "sample",
-               values_to = "counts") %>%
+               values_to = "value") %>%
   inner_join(taxonomy, by="OTUID") 
 ```
 
     # A tibble: 5,814 × 4
-       OTUID                            sample counts phylum    
-       <chr>                            <chr>   <int> <chr>     
-     1 b7baa37944fb48185b3ccd35739564a1 C15A     7068 Firmicutes
-     2 b7baa37944fb48185b3ccd35739564a1 C15B     6498 Firmicutes
-     3 b7baa37944fb48185b3ccd35739564a1 C15C     7198 Firmicutes
-     4 b7baa37944fb48185b3ccd35739564a1 C2A      8357 Firmicutes
-     5 b7baa37944fb48185b3ccd35739564a1 C2B      7573 Firmicutes
-     6 b7baa37944fb48185b3ccd35739564a1 C2C      7124 Firmicutes
-     7 b7baa37944fb48185b3ccd35739564a1 C40A     4524 Firmicutes
-     8 b7baa37944fb48185b3ccd35739564a1 C40B     6459 Firmicutes
-     9 b7baa37944fb48185b3ccd35739564a1 C40C     4730 Firmicutes
-    10 b7baa37944fb48185b3ccd35739564a1 C4A      6459 Firmicutes
+       OTUID                            sample value phylum    
+       <chr>                            <chr>  <int> <chr>     
+     1 b7baa37944fb48185b3ccd35739564a1 C15A    7068 Firmicutes
+     2 b7baa37944fb48185b3ccd35739564a1 C15B    6498 Firmicutes
+     3 b7baa37944fb48185b3ccd35739564a1 C15C    7198 Firmicutes
+     4 b7baa37944fb48185b3ccd35739564a1 C2A     8357 Firmicutes
+     5 b7baa37944fb48185b3ccd35739564a1 C2B     7573 Firmicutes
+     6 b7baa37944fb48185b3ccd35739564a1 C2C     7124 Firmicutes
+     7 b7baa37944fb48185b3ccd35739564a1 C40A    4524 Firmicutes
+     8 b7baa37944fb48185b3ccd35739564a1 C40B    6459 Firmicutes
+     9 b7baa37944fb48185b3ccd35739564a1 C40C    4730 Firmicutes
+    10 b7baa37944fb48185b3ccd35739564a1 C4A     6459 Firmicutes
     # … with 5,804 more rows
 
 ## Create a bar plot
 
-## Select colors for barplot
+**`ggplot`** is on of the more powerful tools in R. It will allow you to
+create several simple and complex plots. Lets start with a bar plot.
 
-[Color
-Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
+We can connect the `ggplot()` function with our pipe but after, all
+`ggplot` layers must be conected with the `+`symbol. Everything inside
+the Aesthetic mappings (`aes()`) describe how variables in the data are
+mapped to visual properties. In this case we are mapping the samples
+with the counts and filling the bars with the phylum names.
+
+``` r
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "sample",
+               values_to = "value") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  ggplot(mapping = aes(x = sample, 
+                       y = value,
+                       fill = phylum)) +
+  geom_bar(stat = "identity") # We dont want geom_bar to count the observations. Only plotting
+```
+
+![](data_wrangling_files/figure-gfm/unnamed-chunk-5-1.png)
+
+## Select colors for bar plot
+
+By default, if you do not set or select a color palette, R would do it
+for you. That is not always the best option. Explore the tool [Color
+Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3) to
+pull 8 different colors and create a vector as shown below.
+
+After, you can add a new layer to the pipe to set the color palette
+chosen by you using `scale_fill_manual(values = bar_colors)`
 
 ``` r
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
+
+
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "sample",
+               values_to = "value") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  ggplot(mapping = aes(x = sample, 
+                       y = value,
+                       fill = phylum)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = bar_colors) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic()
 ```
+
+![](data_wrangling_files/figure-gfm/unnamed-chunk-6-1.png)

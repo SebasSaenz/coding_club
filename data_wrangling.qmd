@@ -49,14 +49,14 @@ The taxonomy file has several problems:
 
 1.  The column containing the **OTUID** is call **Feature ID.** We can rename it using `rename()`
 
-2.  The taxon variable contain all the taxonomic levels in one string. We can separate it using `separate().`The option `sep=""` can be used to separate the string by diferent characters. In this case we use the **;** character.
+2.  The taxon variable contain all the taxonomic levels in one string. We can separate it using `separate().`The option `sep=""` can be used to separate the string by different characters. In this case we use the **;** character.
 
 3.  We want to have a clean and simple data frame. Because of that we can select the wanted variables using `select()` and the names of the variables.
 
 4.  The phylum names contain the extra characters " p\_\_", which create noise in our analysis. We can use `mutate()` combine with `str_replace()`, to modify the string in the phylum variable. **Notice that we are not creating a new variable but modifying the existing one.**
 
-:::{.callout-note}
-Try to replace p\_\_ by other string. For example Phylum:
+::: callout-note
+Try to replace "p\_\_" by other string. For example "Phylum:"
 :::
 
 ```{r}
@@ -69,37 +69,72 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>%
   select(OTUID, phylum) %>% 
   mutate(phylum=str_replace(phylum, " p__", ""))
 
-head(taxonomy) #chec the first 5 row of the dataframe
+head(taxonomy) #check the first 5 row of the dataframe
 ```
 
 In this example, you should obtained a data frame with the dimension 324x2. The two variables are the **OTUID** and the taxonomic level **phylum**.
 
 ## Pivot the data and add taxonomy information
 
+R works better with long data frames. Because of that we can transform our data frame using `pivot_longer()`. With this function all the names from the columns are re organize in a new variable as well as their values per row (`names_to` and `values_to`). When you pivot a data frame, at least one variable should not be pivot. In this cases we use **-OTUID** to indicate the column.
+
+The **counts** data frame and **taxonomy** share a common variable (**OTUID**). We can use that variable to merge the data using `inner_join()`. `inner_join()` would keep all rows that are share by both data frames.
+
+:::{.callout-note}
+Check the function `left_join()`, `right_join()`, `full_join()` and `pivot_wider()`. Do you get a different result joining the data?.
+:::
+
 ```{r}
 #| warning: false
 counts %>% 
   pivot_longer(-OTUID,
                names_to = "sample",
-               values_to = "counts") %>%
+               values_to = "value") %>%
   inner_join(taxonomy, by="OTUID") 
 
 ```
 
-## Create a bar plot 
+## Create a bar plot
+
+**`ggplot`** is on of the more powerful tools in R. It will allow you to create several simple and complex plots. Lets start with a bar plot.
+
+We can connect the `ggplot()` function with our pipe but after, all `ggplot` layers must be conected with the `+`symbol. Everything inside the Aesthetic mappings (`aes()`) describe how variables in the data are mapped to visual properties. In this case we are mapping the samples with the counts and filling the bars with the phylum names.
 
 ```{r}
 #| warning: false
 
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "sample",
+               values_to = "value") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  ggplot(mapping = aes(x = sample, 
+                       y = value,
+                       fill = phylum)) +
+  geom_bar(stat = "identity") # We dont want geom_bar to count the observations. Only plotting
 ```
 
+## Select colors for bar plot
 
-## Select colors for barplot
+By default, if you do not set or select a color palette, R would do it for you. That is not always the best option. Explore the tool [Color Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3) to pull 8 different colors and create a vector as shown below.
 
-[Color Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3)
+After, you can add a new layer to the pipe to set the color palette chosen by you using `scale_fill_manual(values = bar_colors)`
 
 ```{r}
 bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
-```
 
+
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "sample",
+               values_to = "value") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  ggplot(mapping = aes(x = sample, 
+                       y = value,
+                       fill = phylum)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = bar_colors) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_classic()
+```

@@ -25,8 +25,16 @@ sequences obtained from grass ensilaging during 40 days.
 ## Setting the working space
 
 First, we need to organize and set up our working environment. You need
-to create a project folder an inside that, you should create ‘code’ ,’
-rawdata’ and ‘figures’ folder.
+to create a **project** folder an inside that, you should create
+**code**, **rawdata** and **figures** folder. Move all the data to the
+**rawdata** folder.
+
+Use the function ´setwd()´ to select the current working directory of
+the **R** processes.
+
+Use ´install.packages()´ to install necessary libraries and ´library()´
+to load the package. You need to install the packages once in your
+installation life time but ´library()´ must be run every new session.
 
 ``` r
 #setting working direectory

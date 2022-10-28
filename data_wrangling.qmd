@@ -45,7 +45,19 @@ metadata <-  read_tsv("raw_data/weight_ph_data.txt")
 
 ## Clean taxonomy file
 
-We need to
+The taxonomy file has several problems:
+
+1.  The column containing the **OTUID** is call **Feature ID.** We can rename it using `rename()`
+
+2.  The taxon variable contain all the taxonomic levels in one string. We can separate it using `separate().`The option `sep=""` can be used to separate the string by diferent characters. In this case we use the **;** character.
+
+3.  We want to have a clean and simple data frame. Because of that we can select the wanted variables using `select()` and the names of the variables.
+
+4.  The phylum names contain the extra characters " p\_\_", which create noise in our analysis. We can use `mutate()` combine with `str_replace()`, to modify the string in the phylum variable. **Notice that we are not creating a new variable but modifying the existing one.**
+
+:::{.callout-note}
+Try to replace p\_\_ by other string. For example Phylum:
+:::
 
 ```{r}
 #| warning: false
@@ -53,69 +65,34 @@ taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv") %>%
   rename(OTUID='Feature ID') %>%
   separate(Taxon,
            into=c("superkingdom", "phylum", "class", "order", "family", "genus", "species"),
-           sep = ";")
+           sep = ";") %>%
+  select(OTUID, phylum) %>% 
+  mutate(phylum=str_replace(phylum, " p__", ""))
 
-head(taxonomy)
+head(taxonomy) #chec the first 5 row of the dataframe
 ```
 
-## Pivot the data and add metadata
+In this example, you should obtained a data frame with the dimension 324x2. The two variables are the **OTUID** and the taxonomic level **phylum**.
+
+## Pivot the data and add taxonomy information
 
 ```{r}
 #| warning: false
-mean_rel <- counts %>% 
+counts %>% 
   pivot_longer(-OTUID,
                names_to = "sample",
                values_to = "counts") %>%
-  inner_join(metadata, by=c("sample"="Sample")) %>% 
-  select(OTUID, sample, counts, Day)
+  inner_join(taxonomy, by="OTUID") 
 
-head(mean_rel)
 ```
 
-## Taxonomy and relative abundance
+## Create a bar plot 
 
 ```{r}
 #| warning: false
 
-mean_rel <- mean_rel %>% 
-  inner_join(taxonomy, by="OTUID") %>% 
-  group_by(sample, Day, phylum) %>% 
-  summarise(counts=sum(counts),
-            .groups = "drop") %>% 
-  group_by(sample) %>% 
-  mutate(rel_abund = 100*(counts/sum(counts))) %>% 
-  group_by(Day, phylum) %>%
-  summarise(mean_rel =mean(rel_abund),
-            .groups = "drop")
 ```
 
-## Taxon pooling
-
-```{r}
-#| warning: false
-
-taxon_pool <- mean_rel %>%
-  group_by(phylum) %>%
-  summarise(pool = max(mean_rel) < 5,
-            mean=mean(mean_rel),
-            .groups = "drop")  
-
-head(taxon_pool)
-```
-
-## Organized taxon by abundance
-
-```{r}
-pool_mean_rel <- inner_join(taxon_pool, mean_rel, by="phylum") %>%
-  mutate(phylum=if_else(pool, "Other", phylum)) %>%
-  group_by(Day, phylum) %>%
-  summarise(mean_rel=sum(mean_rel),
-            mean =sum(mean),
-            .groups ="drop") %>%
-  mutate(genus=factor(phylum),
-         genus=fct_reorder(phylum, mean,
-                           .desc = TRUE))
-```
 
 ## Select colors for barplot
 
@@ -126,23 +103,3 @@ bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
                 '#b3de69','#fccde5','#d9d9d9','#bc80bd')
 ```
 
-## Barplot
-
-```{r}
-
-  pool_mean_rel %>% 
-    ggplot(aes(x=factor(Day,
-                      levels = c(0,2,4,8,15,40)),
-             y=mean_rel,
-             fill=phylum)) +
-  geom_col() +
-  scale_y_continuous(expand = c(0,0)) +
-  scale_fill_manual(values=bar_colors) + 
-  labs(x="Day",
-       y="Relative abundance (%)") +
-  theme_classic() +
-  theme(legend.title = element_blank(),
-        legend.text = element_text(face = "italic"),
-        axis.text = element_text(size = 14),
-        axis.title = element_text(size = 15))
-```

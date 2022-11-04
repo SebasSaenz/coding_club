@@ -9,8 +9,19 @@ Johan S. Sáenz
 - <a href="#pivot-the-data-and-add-taxonomy-information"
   id="toc-pivot-the-data-and-add-taxonomy-information">Pivot the data and
   add taxonomy information</a>
+- <a href="#replace-taxon-names" id="toc-replace-taxon-names">Replace
+  taxon names</a>
+- <a href="#calculate-relative-abundance"
+  id="toc-calculate-relative-abundance">Calculate relative abundance</a>
+- <a href="#add-metadata-and-calculate-mean-relative-abundance-per-group"
+  id="toc-add-metadata-and-calculate-mean-relative-abundance-per-group">Add
+  metadata and calculate mean relative abundance per group</a>
 - <a href="#create-a-bar-plot" id="toc-create-a-bar-plot">Create a bar
   plot</a>
+- <a
+  href="#create-a-factor-with-the-data-correct-x-axis-and-pimp-your-plot"
+  id="toc-create-a-factor-with-the-data-correct-x-axis-and-pimp-your-plot">Create
+  a factor with the data (correct x-axis) and PIMP your plot</a>
 - <a href="#select-colors-for-bar-plot"
   id="toc-select-colors-for-bar-plot">Select colors for bar plot</a>
 
@@ -66,7 +77,8 @@ counts <- read.table("raw_data/feature-table_ampli.tsv",
 
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
 
-metadata <-  read_tsv("raw_data/weight_ph_data.txt")
+metadata <-  read_tsv("raw_data/weight_ph_data.txt") %>% 
+             rename(samples=Sample)
 ```
 
 ## Clean taxonomy file
@@ -151,25 +163,132 @@ both data frames.
 ``` r
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") 
 ```
 
     # A tibble: 5,814 × 4
-       OTUID                            sample value phylum    
-       <chr>                            <chr>  <int> <chr>     
-     1 b7baa37944fb48185b3ccd35739564a1 C15A    7068 Firmicutes
-     2 b7baa37944fb48185b3ccd35739564a1 C15B    6498 Firmicutes
-     3 b7baa37944fb48185b3ccd35739564a1 C15C    7198 Firmicutes
-     4 b7baa37944fb48185b3ccd35739564a1 C2A     8357 Firmicutes
-     5 b7baa37944fb48185b3ccd35739564a1 C2B     7573 Firmicutes
-     6 b7baa37944fb48185b3ccd35739564a1 C2C     7124 Firmicutes
-     7 b7baa37944fb48185b3ccd35739564a1 C40A    4524 Firmicutes
-     8 b7baa37944fb48185b3ccd35739564a1 C40B    6459 Firmicutes
-     9 b7baa37944fb48185b3ccd35739564a1 C40C    4730 Firmicutes
-    10 b7baa37944fb48185b3ccd35739564a1 C4A     6459 Firmicutes
+       OTUID                            samples values phylum    
+       <chr>                            <chr>    <int> <chr>     
+     1 b7baa37944fb48185b3ccd35739564a1 C15A      7068 Firmicutes
+     2 b7baa37944fb48185b3ccd35739564a1 C15B      6498 Firmicutes
+     3 b7baa37944fb48185b3ccd35739564a1 C15C      7198 Firmicutes
+     4 b7baa37944fb48185b3ccd35739564a1 C2A       8357 Firmicutes
+     5 b7baa37944fb48185b3ccd35739564a1 C2B       7573 Firmicutes
+     6 b7baa37944fb48185b3ccd35739564a1 C2C       7124 Firmicutes
+     7 b7baa37944fb48185b3ccd35739564a1 C40A      4524 Firmicutes
+     8 b7baa37944fb48185b3ccd35739564a1 C40B      6459 Firmicutes
+     9 b7baa37944fb48185b3ccd35739564a1 C40C      4730 Firmicutes
+    10 b7baa37944fb48185b3ccd35739564a1 C4A       6459 Firmicutes
     # … with 5,804 more rows
+
+## Replace taxon names
+
+``` r
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum))
+```
+
+    # A tibble: 5,814 × 4
+       OTUID                            samples values phylum    
+       <chr>                            <chr>    <int> <chr>     
+     1 b7baa37944fb48185b3ccd35739564a1 C15A      7068 Firmicutes
+     2 b7baa37944fb48185b3ccd35739564a1 C15B      6498 Firmicutes
+     3 b7baa37944fb48185b3ccd35739564a1 C15C      7198 Firmicutes
+     4 b7baa37944fb48185b3ccd35739564a1 C2A       8357 Firmicutes
+     5 b7baa37944fb48185b3ccd35739564a1 C2B       7573 Firmicutes
+     6 b7baa37944fb48185b3ccd35739564a1 C2C       7124 Firmicutes
+     7 b7baa37944fb48185b3ccd35739564a1 C40A      4524 Firmicutes
+     8 b7baa37944fb48185b3ccd35739564a1 C40B      6459 Firmicutes
+     9 b7baa37944fb48185b3ccd35739564a1 C40C      4730 Firmicutes
+    10 b7baa37944fb48185b3ccd35739564a1 C4A       6459 Firmicutes
+    # … with 5,804 more rows
+
+``` r
+#An example for a different string
+data.frame(taxon=c("candidatus xy", "candidatus Johan", "candidatus_xy", 
+                   "unclassified xy","unclassified_xz")) %>% 
+  mutate(taxon=str_replace(taxon, "candidatus.*", "Unclassified"),
+         taxon=str_replace(taxon, "unclassified.*", "Unclassifed"))
+```
+
+             taxon
+    1 Unclassified
+    2 Unclassified
+    3 Unclassified
+    4  Unclassifed
+    5  Unclassifed
+
+## Calculate relative abundance
+
+``` r
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values)))
+```
+
+    # A tibble: 108 × 4
+    # Groups:   samples [18]
+       samples phylum           sum_values rel_abun
+       <chr>   <chr>                 <int>    <dbl>
+     1 C15A    Actinobacteriota        167   0.642 
+     2 C15A    Bacteroidota             70   0.269 
+     3 C15A    Cyanobacteria             7   0.0269
+     4 C15A    Firmicutes            20708  79.6   
+     5 C15A    Proteobacteria         5048  19.4   
+     6 C15A    Uclassified               0   0     
+     7 C15B    Actinobacteriota        281   1.08  
+     8 C15B    Bacteroidota            150   0.577 
+     9 C15B    Cyanobacteria             0   0     
+    10 C15B    Firmicutes            21251  81.7   
+    # … with 98 more rows
+
+## Add metadata and calculate mean relative abundance per group
+
+``` r
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun))
+```
+
+    # A tibble: 36 × 3
+    # Groups:   phylum [6]
+       phylum             Day mean_rel_abun
+       <chr>            <dbl>         <dbl>
+     1 Actinobacteriota     0        10.8  
+     2 Actinobacteriota     2         1.77 
+     3 Actinobacteriota     4         1.76 
+     4 Actinobacteriota     8         1.22 
+     5 Actinobacteriota    15         0.773
+     6 Actinobacteriota    40         0.491
+     7 Bacteroidota         0         2.02 
+     8 Bacteroidota         2         0.749
+     9 Bacteroidota         4         0.892
+    10 Bacteroidota         8         0.829
+    # … with 26 more rows
 
 ## Create a bar plot
 
@@ -185,16 +304,55 @@ with the counts and filling the bars with the phylum names.
 ``` r
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") %>% 
-  ggplot(mapping = aes(x = sample, 
-                       y = value,
-                       fill = phylum)) +
-  geom_bar(stat = "identity") # We dont want geom_bar to count the observations. Only plotting
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = Day,
+             y = mean_rel_abun,
+             fill = phylum)) +
+  geom_bar(stat = "identity")
 ```
 
-![](data_wrangling_files/figure-gfm/unnamed-chunk-5-1.png)
+![](data_wrangling_files/figure-gfm/unnamed-chunk-8-1.png)
+
+## Create a factor with the data (correct x-axis) and PIMP your plot
+
+``` r
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = factor(Day,
+                        levels = c(0, 2,4,8,15,40)), 
+             y = mean_rel_abun,
+             fill = phylum)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(expand = c(0,0)) + # modify scale 
+  labs(x ="Days", # axis names
+       y = "Relative abundance (%)") +
+  theme_classic()
+```
+
+![](data_wrangling_files/figure-gfm/unnamed-chunk-9-1.png)
 
 ## Select colors for bar plot
 
@@ -207,22 +365,38 @@ After, you can add a new layer to the pipe to set the color palette
 chosen by you using `scale_fill_manual(values = bar_colors)`
 
 ``` r
-bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-                '#b3de69','#fccde5','#d9d9d9','#bc80bd')
-
+col_values <- c('#e41a1c','#377eb8','#4daf4a','#984ea3',
+                 '#ff7f00','#ffff33')
 
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") %>% 
-  ggplot(mapping = aes(x = sample, 
-                       y = value,
-                       fill = phylum)) +
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = factor(Day,
+                        levels = c(0, 2,4,8,15,40)), 
+             y = mean_rel_abun,
+             fill = phylum)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values = bar_colors) +
   scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = col_values)# modify scale 
+```
+
+![](data_wrangling_files/figure-gfm/unnamed-chunk-10-1.png)
+
+``` r
+  labs(x ="Days", # axis names
+       y = "Relative abundance (%)") +
   theme_classic()
 ```
 
-![](data_wrangling_files/figure-gfm/unnamed-chunk-6-1.png)
+    NULL

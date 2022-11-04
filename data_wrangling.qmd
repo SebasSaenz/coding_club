@@ -40,7 +40,8 @@ counts <- read.table("raw_data/feature-table_ampli.tsv",
 
 taxonomy <- read_tsv("raw_data/taxonomy_ampli.tsv")
 
-metadata <-  read_tsv("raw_data/weight_ph_data.txt")
+metadata <-  read_tsv("raw_data/weight_ph_data.txt") %>% 
+             rename(samples=Sample)
 ```
 
 ## Clean taxonomy file
@@ -80,7 +81,7 @@ R works better with long data frames. Because of that we can transform our data 
 
 The **counts** data frame and **taxonomy** share a common variable (**OTUID**). We can use that variable to merge the data using `inner_join()`. `inner_join()` would keep all rows that are share by both data frames.
 
-:::{.callout-note}
+::: callout-note
 Check the function `left_join()`, `right_join()`, `full_join()` and `pivot_wider()`. Do you get a different result joining the data?.
 :::
 
@@ -88,10 +89,66 @@ Check the function `left_join()`, `right_join()`, `full_join()` and `pivot_wider
 #| warning: false
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") 
 
+```
+
+## Replace taxon names
+
+```{r}
+#| warning: false
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum))
+
+#An example for a different string
+data.frame(taxon=c("candidatus xy", "candidatus Johan", "candidatus_xy", 
+                   "unclassified xy","unclassified_xz")) %>% 
+  mutate(taxon=str_replace(taxon, "candidatus.*", "Unclassified"),
+         taxon=str_replace(taxon, "unclassified.*", "Unclassifed"))
+
+```
+
+## Calculate relative abundance
+
+```{r}
+#| warning: false
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values)))
+
+```
+
+## Add metadata and calculate mean relative abundance per group
+
+```{r}
+#| warning: false
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun))
 ```
 
 ## Create a bar plot
@@ -102,16 +159,53 @@ We can connect the `ggplot()` function with our pipe but after, all `ggplot` lay
 
 ```{r}
 #| warning: false
-
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") %>% 
-  ggplot(mapping = aes(x = sample, 
-                       y = value,
-                       fill = phylum)) +
-  geom_bar(stat = "identity") # We dont want geom_bar to count the observations. Only plotting
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = Day,
+             y = mean_rel_abun,
+             fill = phylum)) +
+  geom_bar(stat = "identity")
+```
+
+## Create a factor with the data (correct x-axis) and PIMP your plot
+
+```{r}
+#| warning: false
+counts %>% 
+  pivot_longer(-OTUID,
+               names_to = "samples",
+               values_to = "values") %>%
+  inner_join(taxonomy, by="OTUID") %>% 
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = factor(Day,
+                        levels = c(0, 2,4,8,15,40)), 
+             y = mean_rel_abun,
+             fill = phylum)) +
+  geom_bar(stat = "identity") +
+  scale_y_continuous(expand = c(0,0)) + # modify scale 
+  labs(x ="Days", # axis names
+       y = "Relative abundance (%)") +
+  theme_classic()
 ```
 
 ## Select colors for bar plot
@@ -121,20 +215,31 @@ By default, if you do not set or select a color palette, R would do it for you. 
 After, you can add a new layer to the pipe to set the color palette chosen by you using `scale_fill_manual(values = bar_colors)`
 
 ```{r}
-bar_colors <- c('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-                '#b3de69','#fccde5','#d9d9d9','#bc80bd')
-
+col_values <- c('#e41a1c','#377eb8','#4daf4a','#984ea3',
+                 '#ff7f00','#ffff33')
 
 counts %>% 
   pivot_longer(-OTUID,
-               names_to = "sample",
-               values_to = "value") %>%
+               names_to = "samples",
+               values_to = "values") %>%
   inner_join(taxonomy, by="OTUID") %>% 
-  ggplot(mapping = aes(x = sample, 
-                       y = value,
-                       fill = phylum)) +
+  mutate(phylum=if_else(is.na(phylum), "Uclassified", phylum)) %>% 
+  group_by(samples, phylum) %>% 
+  summarise(sum_values =sum(values), .groups = "drop") %>% 
+  group_by(samples) %>% 
+  mutate(rel_abun = 100*(sum_values/sum(sum_values))) %>% 
+  inner_join(metadata, by="samples") %>% 
+  select(samples, phylum, Day, rel_abun) %>% 
+  group_by(phylum, Day) %>% 
+  summarise(mean_rel_abun = mean(rel_abun), .groups = "drop") %>% 
+  ggplot(aes(x = factor(Day,
+                        levels = c(0, 2,4,8,15,40)), 
+             y = mean_rel_abun,
+             fill = phylum)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values = bar_colors) +
   scale_y_continuous(expand = c(0,0)) +
+  scale_fill_manual(values = col_values)# modify scale 
+  labs(x ="Days", # axis names
+       y = "Relative abundance (%)") +
   theme_classic()
 ```

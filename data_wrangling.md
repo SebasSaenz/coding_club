@@ -1,4 +1,4 @@
-Data wrangling from amplicon sequencing
+Amplicon sequencing data wrangling
 ================
 Johan S. Sáenz
 
@@ -185,6 +185,30 @@ counts %>%
 
 ## Replace taxon names
 
+Microbial taxonomy is difficult :( . Sometimes, a name or taxonomy can
+not be assigned to a DNA sequence and we need to deal with that. What
+cases do we have? :
+
+1.  An empty value, no name no taxonomy.
+
+2.  The taxon can be call candidatus_xx. This probably means there is
+    not a cultivated reference similar to that sequence.
+
+3.  The taxon is call unclassified (That is self explanatory), but
+    sometimes a taxon can be classify at Phylum level and not to lower
+    levels. In that case we find names like: Family
+    =unclassified_Lactobacillaceae.
+
+As we want to standardize our names, we can rename those taxa with
+unfamiliar names. In that way we can group them later in the same group.
+For that we can use the function `mutate()` and `if_else()`. With the
+function `mutate()` you can add new variables and rewrite existing ones.
+On the other hand, `if_else()`, is a bit more complicated, because it
+works as a conditional. For example
+`if_else(is.na(phylum), "Uclassified", phylum))` if phylum is a missing
+value, rename to “Unclassified”, if not keep the value in phylum. This
+works great when we have empty or missing values.
+
 ``` r
 counts %>% 
   pivot_longer(-OTUID,
@@ -208,6 +232,15 @@ counts %>%
      9 b7baa37944fb48185b3ccd35739564a1 C40C      4730 Firmicutes
     10 b7baa37944fb48185b3ccd35739564a1 C4A       6459 Firmicutes
     # … with 5,804 more rows
+
+More often, when want to replace existing strings or text. In that case
+we can use `str_replace()`. This functions is quite versatile if you
+combine it with
+[Regex](https://cran.r-project.org/web/packages/stringr/vignettes/regular-expressions.html)
+(regular expressions). Have a look at the example, we used . and \* as
+special characters to match all characters after “candidatus” and
+“unclassified”. The . would match any character and \* would match 0 or
+more times the previous character.
 
 ``` r
 #An example for a different string
@@ -322,7 +355,7 @@ counts %>%
   geom_bar(stat = "identity")
 ```
 
-![](data_wrangling_files/figure-gfm/unnamed-chunk-8-1.png)
+![](data_wrangling_files/figure-gfm/unnamed-chunk-9-1.png)
 
 ## Create a factor with the data (correct x-axis) and PIMP your plot
 
@@ -352,7 +385,7 @@ counts %>%
   theme_classic()
 ```
 
-![](data_wrangling_files/figure-gfm/unnamed-chunk-9-1.png)
+![](data_wrangling_files/figure-gfm/unnamed-chunk-10-1.png)
 
 ## Select colors for bar plot
 
@@ -362,7 +395,7 @@ Brewer](https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3) to
 pull 8 different colors and create a vector as shown below.
 
 After, you can add a new layer to the pipe to set the color palette
-chosen by you using `scale_fill_manual(values = bar_colors)`
+chosen by you using `scale_fill_manual(values = col_values)`
 
 ``` r
 col_values <- c('#e41a1c','#377eb8','#4daf4a','#984ea3',
@@ -388,15 +421,10 @@ counts %>%
              fill = phylum)) +
   geom_bar(stat = "identity") +
   scale_y_continuous(expand = c(0,0)) +
-  scale_fill_manual(values = col_values)# modify scale 
-```
-
-![](data_wrangling_files/figure-gfm/unnamed-chunk-10-1.png)
-
-``` r
+  scale_fill_manual(values = col_values) +# modify scale 
   labs(x ="Days", # axis names
        y = "Relative abundance (%)") +
   theme_classic()
 ```
 
-    NULL
+![](data_wrangling_files/figure-gfm/unnamed-chunk-11-1.png)

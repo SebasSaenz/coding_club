@@ -9,6 +9,8 @@ format:
     code-fold: show
 ---
 
+## THE AIM
+
 This tutorial would guide you across the data analysis of amplicon sequences obtained from grass ensilaging during 40 days.
 
 ![Grass ensilagin in glass jars durion 40 days](data_wrangling_files/IMG_6246.png){fig-align="center" width="187"}
